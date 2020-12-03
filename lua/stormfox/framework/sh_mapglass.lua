@@ -145,8 +145,14 @@ StormFox.MAP = {}
 			str = str .. ".bsp"
 		end
 		local fil = "maps/" .. str
+		local fil2 = "maps/" .. game.GetMap() .. "_l_0.lmp"
 		if not file.Exists(fil,"GAME") then return end
+		local f_ent_lump
 		local f = file.Open(fil,"rb","GAME")
+		if file.Exists(fil2,"GAME") then
+			print("Found lump file with ent info")
+			f_ent_lump = file.Open(fil2,"rb","GAME")
+		end
 		-- BSP file header
 			if f:Read(4) ~= "VBSP" then -- Invalid
 				return false
@@ -159,9 +165,18 @@ StormFox.MAP = {}
 			for i = 1,64 do
 				lumps[i] = ReadLump(f,BSPDATA.version)
 			end
+			if f_ent_lump then
+				lumps[1] = ReadLump(f_ent_lump, BSPDATA.version)
+				lumps[1].filelen = f_ent_lump:Size()
+			end
 		-- Read entities (LUMP 0)
 			BSPDATA.Entities = {}
-			local data = GetLump(f,lumps[1])
+			local data
+			if f_ent_lump then
+				data  = GetLump(f_ent_lump, lumps[1])
+			else
+				data  = GetLump(f, lumps[1])
+			end
 			if data then
 				for s in string.gmatch( data, "%{.-%\n}" ) do
 					local t = util.KeyValuesToTable("t" .. s)
